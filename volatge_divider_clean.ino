@@ -1,0 +1,23 @@
+/*****Tasks to be done******/
+//voltage divider using Teensy4.1
+
+/*****Variable******/
+const float referenceVolts = 9;
+const float R1 = 1000; 
+const float R2 = 4700;
+const float resistorFactor = 1023.0 * (R2/(R1 + R2));
+const int batteryPin = A0;
+int val = analogRead(batteryPin);
+
+/*****Setup******/
+void setup()
+{
+ Serial.begin(9600);
+}
+
+/*****Loop******/
+void loop()
+{
+ float volts = (val / resistorFactor) * referenceVolts; // calculate the ratio
+ Serial.println(volts); // print the value in volts
+}
