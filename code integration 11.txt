@@ -274,8 +274,8 @@ void VD()
 
 void buffer_fun()
 {
- //if (telemetryOnOff==1)
-  //{
+ if (telemetryOnOff==1)
+  {
    tpa();
    mpu_tilt();
    gps_loop();  
@@ -288,8 +288,8 @@ void buffer_fun()
            UTCtime1, UTCtime2, s,EPC, altitude_resolved,temperature_resolved, volts_resolved, pressure_resolved,hr, mins, sec, 
            gAltitude_resolved, lat_resolved, lng_resolved, sats, tiltx_resolved, tilty_resolved); 
    Serial.println(buffers); 
-   //Serial2.println(buffers);
-  //}
+   Serial2.println(buffers);
+  }
  myFile = SD.open("CodeData.csv", FILE_WRITE);
  myFile.print(buffers);
  myFile.println();
