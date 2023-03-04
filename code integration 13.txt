@@ -8,7 +8,7 @@
 //transmission of data using XBee
 //Capture the photo/video according to the user input
 //Servos tested
-//camera are to be tested
+//camera tested
 
 /********************************************************Library********************************************/
 #include <EEPROM.h> //EEPROM library
