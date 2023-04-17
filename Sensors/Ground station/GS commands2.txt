@@ -1,0 +1,207 @@
+#include <EEPROM.h>
+#include <XBee.h>
+#include <TimeLib.h>
+#include <Adafruit_BMP280.h>
+int Actualtime,UTCtime,UTCtime1,UTCtime2;
+char gs_commands, buffers[120];
+float Value1 = UTCtime;
+double Value2 = pressure;
+float referenceAltitude,actualAltitude,realAltitude;
+int flag;
+float i,t;
+#define TIME_HEADER  "T" ;
+void UTCtime();
+void rtc_printDigits(int digits); 
+void rtc_digitalClockDisplay();
+unsigned long processSyncMessage() ;
+XBee xbee = XBee(2,3);
+Adafruit_BMP280 bmp;
+void setup() 
+{
+  Serial.begin(9600);
+  setSyncProvider(getTeensy3Time);
+  pinMode(2,INPUT);
+  pinMode(3,OUTPUT);
+  pinMode(13,OUTPUT);
+  xbee.begin(9600);
+  while(!Serial);
+  delay(100);
+  if(timeStatus()!= timeSet) 
+  {
+    Serial.println("Unable to sync with the RTC");
+  } 
+  else 
+  {
+    Serial.println("According to UTC Time");
+  }
+  Serial.println(F("BMP280 test"));
+  
+  if(!bmp.begin(0x76))
+  {
+    Serial.println(F("Could not find a valid BMP280 sensor, check wiring!"));
+    while (1);
+  }
+
+  /* Default settings from datasheet. */
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+   
+ flag=EEPROM.read(25);
+ if(flag==0)
+  {
+    referenceAltitude = bmp.readAltitude();
+    EEPROM.write(20,referenceAltitude);
+    flag = 9;
+    EEPROM.write(25,flag);
+  }
+
+  else
+  {
+    referenceAltitude = EEPROM.read(20);
+  }
+  Serial.print("The reference Altitude is : ");
+  Serial.println(referenceAltitude);
+}
+
+void loop() 
+{  
+  if(xbee.available()>0)
+  {
+    gs_commands = xbee.read();
+    Serial.print("Ground Station is initiating to give commands");
+    if(gs_commands=='0')
+    {
+      readAltitude();
+      sprintf(buffers,"CAL,%f",actualAltitude);
+    }
+    if(gs_commands=='1')
+    {
+      sprintf(buffers,"CMD,1033,CX,ON");
+    }
+    else if(temp=='2')
+    {
+      sprintf(buffers,"CMD,1033,CX,OFF");
+    }
+    else if(gs_commands=='3-Value1-')
+    {
+      UTCtime();
+      sprintf(buffers,"CMD,1033,ST,%d:%d:%d",UTCtime1,UTCtime2,sec)
+    } 
+    else if(gs_commands=='4')
+    {
+      sprintf(buffers,"CMD,1033,SIM,ENABLE");
+    }
+    else if(gs_commands=='5')
+    {
+      sprintf(buffers,"CMD,1033,SIM,ACTIVATE");
+    }
+    else if(gs_commands=='6-Value2-')
+    {
+      readPressure();
+      sprintf(buffers,"CMD,1033,SIMP,%lf",pressure);
+    }
+    else if(gs_commands=='7')
+    {
+      sprintf(buffers,"CMD,1033,PC,%d",packetCount);
+    }  
+    else if(gs_commands=='a')
+    {
+      sprintf(buffers,"CMD,1033,HS,START");
+      HServo.write(0);
+    }
+    else if(gs_commands=='A')
+    {
+      sprintf(buffers,"CMD,1033,HS,STOP");
+      HServo.write(90);
+    }
+    else if(gs_commands=='b')
+    {
+      sprintf(buffers,"CMD,1033,ServoParachute");
+      PServo.write(90);
+    }
+    else if(gs_commands=='c')
+    {
+      sprintf(buffers,"CMD,1033,ServoFlag");
+      MServo.write(180);
+    }
+    Serial.println(Buffers);
+  }
+}
+
+void UTCtime() 
+{
+  if (Serial.available()) 
+  {
+    time_t t = processSyncMessage();
+    if (t != 0) 
+    {
+      Teensy3Clock.set(t); // set the RTC
+      setTime(t);
+    }
+  }
+  rtc_digitalClockDisplay();  
+  delay(1000);
+}
+
+void rtc_printDigits(int digits)
+{ // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
+void rtc_digitalClockDisplay()
+{ // digital clock display of the time
+  Actualtime=hour()*60+minute();//conversion of hour to min
+  UTCtime=Actualtime-(5*60+30);
+  UTCtime1=UTCtime/60;//conversion of min to hour
+  UTCtime2=UTCtime%60;//modulus formation
+   Serial.print(UTCtime1);
+   Serial.print(":");
+   Serial.print(UTCtime2);
+   Serial.print(":");
+   Serial.println(second());
+}
+
+ time_t getTeensy3Time()
+{
+  return Teensy3Clock.get();
+}
+  
+ unsigned long processSyncMessage() 
+ {
+  unsigned long pctime = 0L;
+  const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013 
+  if(Serial.find(TIME_HEADER)) 
+  {
+     pctime = Serial.parseInt();
+     return pctime;
+     if( pctime < DEFAULT_TIME) 
+     { // check the value is a valid time (greater than Jan 1 2013)
+       pctime = 0L; // return 0 to indicate that the time is not valid
+     }
+  }
+  return pctime;
+}
+
+void readPressure() 
+{
+    Serial.print(F("Pressure = "));
+    Serial.print(bmp.readPressure()/100); //displaying the Pressure in hPa, you can change the unit
+    Serial.println(" hPa");
+}
+    
+void readAltitude()
+{
+    Serial.print(F("Approx altitude = "));
+    Serial.print(bmp.readAltitude(1019.66)); //The "1019.66" is the pressure(hPa) at sea level in day in your region
+    Serial.println(" m");                    //If you don't know it, modify it until you get your current altitude
+    actualAltitude=(bmp.readAltitude());
+    realAltitude=actualAltitude-referenceAltitude;
+    Serial.println(realAltitude);
+    delay(2000);
+}
