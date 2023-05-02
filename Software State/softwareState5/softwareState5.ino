@@ -7,7 +7,7 @@
 #include <String.h>              //For displaying string
 #include <Adafruit_GPS.h>        //GPS library
 #include <Servo.h>               //Servo Library
-#include <SD.h>
+#include <SD.h>                  //SD CARD
 
 /********************************VARIABLE DECLARATION**************************/
 byte softwareState;              //Stores software state
@@ -429,8 +429,8 @@ void sdcard()
 {
   myFile= SD.open("CodeData.csv", FILE_WRITE);
    if (myFile){
- Serial.println(buffers);
-  myFile.print(buffers);
+ Serial.println(probeBuffer);
+  myFile.print(probeBuffer);
   myFile.println();
   myFile.close();
 }}
