@@ -7,7 +7,7 @@
 #include <String.h>              //For displaying string
 #include <Adafruit_GPS.h>        //GPS library
 #include <Servo.h>               //Servo Library
-
+#include <SD.h>
 
 /********************************VARIABLE DECLARATION**************************/
 byte softwareState;              //Stores software state
@@ -60,6 +60,8 @@ int servoAngle;
 char cmdEcho[10];
 String cmdCommand;
 
+const int chipSelect = BUILTIN_SDCARD; //SD_CARD
+
 /********************************DEFINITIONS**************************/
 #define GPSSerial Serial1        //GPS COMMUNICATES VIA SERIAL 1
 #define GPSECHO false 
@@ -83,7 +85,7 @@ Adafruit_GPS GPS(&GPSSerial);
 Servo heatShieldServo;
 Servo parachuteServo;
 Servo flagServo;
-
+File myFile; //SDCARD
 
 void setup() {
   // put your setup code here, to run once:
@@ -98,6 +100,13 @@ void setup() {
   servo_setup_function();
   camera_setup_function();
   softwareState_setup();
+  
+  if (!SD.begin(chipSelect)) 
+  {
+    Serial5.println("Initialization failed!");
+    return;
+  }
+  
 }
 
 
@@ -415,6 +424,17 @@ void activate_audio_beacon(){
   digitalWrite(buzzerPin,HIGH);
 }
 
+/********************************SD_CARD_FUNCTION()**********************************/
+void sdcard()
+{
+  myFile= SD.open("CodeData.csv", FILE_WRITE);
+   if (myFile){
+ Serial.println(buffers);
+  myFile.print(buffers);
+  myFile.println();
+  myFile.close();
+}}
+
 /********************************PROBE BUFFER CREATION FUNCTION()**********************************/
 void probe_buffer_function(){
   if(probeOnOff == 1){
@@ -422,6 +442,7 @@ void probe_buffer_function(){
    rtc_loop_function();
    mpu_loop_function();
    voltagedivider_loop_function();
+   sdcard();
 
    //CMD ECHO,ALTITUDE,SS,PC,VOLTAGE
    // \n aage ki peeche ??
