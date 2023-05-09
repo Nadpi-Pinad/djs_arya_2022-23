@@ -49,7 +49,7 @@ int led = 13;                    //TEENSY BUILT-IN LED
 int trig = 3;                    //Camera Trigger 
 int buzzerPin = 20;              //BUZZER PIN
 
-char probeBuffer[120];            //Will store telemetry data ** CHANGE THE SIZE!!!
+char probeBuffer[100];            //Will store telemetry data ** CHANGE THE SIZE!!!
 bool probeOnOff;                 //This decides whether to send telemetry or not
 
 //SERVO ROTATION
@@ -474,7 +474,7 @@ void probe_buffer_function(){
            h,m,s,packetCount,mode,softwareState,altitude,hsDeployed,parachuteDeployed,mastRaised,
            temperature,pressure,volts,h,m,s,altitude,gpsLatitude1,gpsLongitude1,
            gpsSatellites,tiltX,tiltY);
-   strcat(probeBuffer, cmdEcho.c_str() );
+   strcat(probeBuffer,cmdEcho.c_str());
    packetCount=packetCount+1;
    EEPROM.put(packetCountLocation,packetCount);
   }
@@ -483,7 +483,7 @@ void probe_buffer_function(){
 /********************************SENDING PROBE TELEMETRY FUNCTION()**********************************/
 void telemetry_function(){
   if(probeOnOff == 1){
-    for(int i = 0;i<120;i++){
+    for(int i = 0;i<100;i++){
       Serial5.print(probeBuffer[i]);
     }
     Serial5.println();
