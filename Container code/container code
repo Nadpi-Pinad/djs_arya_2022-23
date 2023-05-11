@@ -1,0 +1,71 @@
+/**************Tasks to be done***************/
+//Storing values from BMP280 in EEPROM
+
+/**************Library***************/
+#include <EEPROM.h> //EEPROM library
+#include <Adafruit_BMP280.h> //adafruit BMP280 library
+#include <Servo.h>
+
+/**************Variable***************/
+double referenceAltitude;        //Ground station altitude
+double bmpAltitude,altitude;     //Height given by BMP & telemetry height
+byte referenceAltitudeFlag;      //Reference altitude flag
+
+/**************Define***************/
+#define payload_release_h 500
+#define altitudeFlag 200
+#define referenceAltitudeLocation 400
+ 
+/**************UserDefine Function declaration***************/
+void bmp_setup_function();
+void bmp_loop_function();
+
+/**************object declaration***************/
+Servo probe_release_servo;
+Adafruit_BMP280 bmp; // I2C Interface
+
+/**************Setup***************/
+void setup() {
+bmp_setup_function();
+probe_release_servo.attach(33);
+}
+
+/**************Loop***************/
+void loop() 
+{
+    if (abs(altitude)<=payload_release_h)
+    {
+      probe_release_servo.write(90);
+    }
+}
+
+/****************************************************BMP SETUP FUNCTION**************************************************/
+ void bmp_setup_function() {
+  //Initialize BMP
+  if (!bmp.begin(0x76)) {
+  Serial5.println(F("Could not find a valid BMP280 sensor, check wiring!"));
+  }
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+   
+  referenceAltitudeFlag = EEPROM.read(altitudeFlag);       
+  
+  if(referenceAltitudeFlag == 0){
+   referenceAltitude = abs(bmp.readAltitude());
+   EEPROM.put(referenceAltitudeLocation,referenceAltitude);
+   referenceAltitudeFlag = 1;
+   EEPROM.write(altitudeFlag,referenceAltitudeFlag); 
+  }
+
+  else if(referenceAltitudeFlag == 1){
+    EEPROM.get(referenceAltitudeLocation,referenceAltitude);
+  }  
+}
+
+void bmp_loop_function(){
+    bmpAltitude = abs(bmp.readAltitude());
+    altitude = abs(bmpAltitude - referenceAltitude);
+}
