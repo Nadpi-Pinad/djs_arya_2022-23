@@ -31,7 +31,6 @@ Adafruit_BMP280 bmp; // I2C Interface
 
 /**************Setup***************/
 void setup() {
-Serial.begin(9600);
 
 bmp_setup_function();
 
