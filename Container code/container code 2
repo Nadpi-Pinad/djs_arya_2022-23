@@ -44,6 +44,7 @@ descent_done=false;
 /**************Loop***************/
 void loop() 
 {
+bmp_loop_function();
   if (abs(altitude) >= rocket_sep_h1 && abs(altitude) <= rocket_sep_h2)
   {
     descent_done=true;
