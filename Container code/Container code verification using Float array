@@ -1,0 +1,96 @@
+/**************Tasks to be done***************/
+//Storing values from BMP280 in EEPROM
+
+/**************Library***************/
+#include <EEPROM.h> //EEPROM library
+#include <Adafruit_BMP280.h> //adafruit BMP280 library
+#include <Servo.h>
+
+/**************Variable***************/
+double referenceAltitude;        //Ground station altitude
+double bmpAltitude,altitude;     //Height given by BMP & telemetry height
+byte referenceAltitudeFlag;      //Reference altitude flag
+bool descent_done;
+int i=0;
+
+float height_array[156]={633.03,632.94,633.03,633.03,633.03,633.03,633.03,633.03,632.94,632.94,632.94,632.94,633.03,633.03,633.03,633.03,633.12,633.12,633.12,633.12,633.2,643.56,709.69,805.45,1024.96,1119.93,1188.76,1245.36,1286.61,1337.98,1342.34,1346.04,1341.3,1326.32,1311.27,1296.33,1281.33,1266.25,1251.29,1236.25,1221.33,1206.25,1191.28,1176.25,1161.32,1146.33,1126.25,1106.3,1086.3,1066.33,1046.32,1026.25,1006.31,986.32,966.28,946.27,926.31,906.29,886.32,866.29,846.3,833.11,828.06,823.01,817.87,812.83,807.79,802.75,797.71,792.68,787.64,782.52,777.5,772.47,767.45,762.34,757.32,752.31,747.2,742.19,737.1,732.09,727.0,722.0,716.91,711.83,706.83,701.75,696.68,691.69,686.62,681.55,676.48,671.51,666.45,661.39,656.33,651.27,646.22,641.17,636.13,636.13,636.13,636.13,636.13,636.21,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.13,636.21,636.21,636.21,636.13,636.21,636.13,636.21,636.13,636.21,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04,636.04};
+
+/**************Define***************/
+#define payload_release_h 500
+#define altitudeFlag 200 //EEPROM
+#define referenceAltitudeLocation 400 //EEPROM
+#define descent_done_location 300 //EEPROM
+#define rocket_sep_h1 650
+#define rocket_sep_h2 700
+ 
+/**************UserDefine Function declaration***************/
+void bmp_setup_function();
+void bmp_loop_function();
+
+/**************object declaration***************/
+Servo probe_release_servo;
+Adafruit_BMP280 bmp; // I2C Interface
+
+/**************Setup***************/
+void setup() {
+
+bmp_setup_function();
+
+probe_release_servo.attach(10);
+probe_release_servo.write(0); //subject to change
+
+descent_done = EEPROM.read(descent_done_location);
+descent_done=false;
+}
+
+/**************Loop***************/
+void loop() 
+{
+  delay(1000);
+  i+=1;
+  bmp_loop_function();
+Serial.print(i);
+Serial.print(": ");
+Serial.println(altitude);
+
+  if (abs(altitude) >= rocket_sep_h1 && abs(altitude) <= rocket_sep_h2)
+  {
+    descent_done=true;
+    //Serial.print("Ascent_done");
+    EEPROM.write(descent_done_location, descent_done);
+   }
+    if (abs(altitude)<=payload_release_h)
+   {
+     if(descent_done==true)
+     {
+      //Serial.print("Servo_done");
+      probe_release_servo.write(90);
+    }
+   }}
+   
+/****************************************************BMP SETUP FUNCTION**************************************************/
+ void bmp_setup_function() {
+  //Initialize BMP
+ if (!bmp.begin(0x76)) {
+  Serial.println(F("Could not find a valid BMP280 sensor, check wiring!"));
+  }
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+                  
+      referenceAltitude=height_array[0];
+      Serial.println("Altitude reference set");
+      Serial2.println("Altitude reference set");
+      Serial2.println(referenceAltitude);
+
+      
+  }  
+
+void bmp_loop_function()
+{
+  bmpAltitude = height_array[i];
+    altitude = abs(bmpAltitude - referenceAltitude);
+    //temperature = bmp.readTemperature();
+}
