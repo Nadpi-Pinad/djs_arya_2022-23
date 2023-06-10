@@ -5,7 +5,7 @@ void servo_setup_function(){
     parachuteServo.attach(10);
     flagServo.attach(36);
 
-    parachuteServo.write(0);
+    parachuteServo.write(180);
     flagServo.write(0);
 
 //    EEPROM.get(heatShieldLocation,hsDeployed);
@@ -53,7 +53,7 @@ void probe_upright_function(){
 }
 
 void probe_parachute_function(){
-  parachuteServo.write(180);
+  parachuteServo.write(0);
 }
 
 void flag_release_function(){
